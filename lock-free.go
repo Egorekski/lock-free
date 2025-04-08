@@ -38,3 +38,41 @@ func (l *List) Print() {
 }
 
 // TODO: Make finding by index (FindByIndex func)
+
+
+type StackNode struct {
+	value int          
+	next  unsafe.Pointer 
+}
+
+type Stack struct {
+	top unsafe.Pointer
+}
+
+func (s *Stack) Push(value int) {
+	node := &StackNode{value: value}
+
+	for {
+		oldTop := atomic.LoadPointer(&s.top)
+		node.next = oldTop
+
+		if atomic.CompareAndSwapPointer(&s.top, oldTop, unsafe.Pointer(node)) {
+			break
+		}
+	}
+}
+
+func (s *Stack) Pop() (int, bool) {
+	for {
+		oldTop := atomic.LoadPointer(&s.top)
+		if oldTop == nil {
+			return 0, false
+		}
+
+		newTop := (*StackNode)(oldTop).next
+
+		if atomic.CompareAndSwapPointer(&s.top, oldTop, unsafe.Pointer(newTop)) {
+			return (*StackNode)(oldTop).value, true
+		}
+	}
+}
