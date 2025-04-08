@@ -97,7 +97,7 @@ func (s *Stack) Pop() (int, bool) {
 // Lock-free Queue
 type QueueNode struct {
     value int
-    next  *QueueNode
+    next  unsafe.Pointer
 }
 
 type Queue struct {
@@ -106,19 +106,52 @@ type Queue struct {
 }
 
 func NewQueue() *Queue {
-	hd := &QueueNode{value: 0}
+	dummy := &QueueNode{}
 	return &Queue{
-		head: unsafe.Pointer(hd),
+		head: unsafe.Pointer(dummy),
+		tail: unsafe.Pointer(dummy),
 	}
 }
 
 func (q *Queue) Enqueue(value int) {
-	valuePtr := unsafe.Pointer(&value)
-	q.tail = atomic.LoadPointer((*unsafe.Pointer)(valuePtr))
+	newNode := &QueueNode{value: value}
+	for {
+		tail := atomic.LoadPointer(&q.tail)
+		tailNode := (*QueueNode)(tail)
+		next := atomic.LoadPointer(&tailNode.next)
+		
+		if tail == atomic.LoadPointer(&q.tail) { 
+			if next == nil { 
+				if atomic.CompareAndSwapPointer(&tailNode.next, next, unsafe.Pointer(newNode)) {
+					atomic.CompareAndSwapPointer(&q.tail, tail, unsafe.Pointer(newNode))
+					return
+				}
+			} else {
+				atomic.CompareAndSwapPointer(&q.tail, tail, next)
+			}
+		}
+	}
 }
 
 func (q *Queue) Dequeue() (int, bool) {
-	dequeued := atomic.LoadInt32((*int32)(q.head))
-	swapped := atomic.CompareAndSwapPointer((*unsafe.Pointer)(q.head), q.head, nil)
-	return int(dequeued), swapped
+	for {
+		head := atomic.LoadPointer(&q.head)
+		headNode := (*QueueNode)(head)
+		tail := atomic.LoadPointer(&q.tail)
+		next := atomic.LoadPointer(&headNode.next)
+		
+		if head == atomic.LoadPointer(&q.head) { 
+			if head == tail { 
+				if next == nil {
+					return 0, false
+				}
+				atomic.CompareAndSwapPointer(&q.tail, tail, next)
+			} else {
+				value := (*QueueNode)(next).value
+				if atomic.CompareAndSwapPointer(&q.head, head, next) {
+					return value, true
+				}
+			}
+		}
+	}
 }
