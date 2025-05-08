@@ -17,7 +17,7 @@ The list is implemented using atomic pointer operations, which ensures that mult
 To install this package, simply add it to your Go project:
 
 ```sh
-go get github.com/yourusername/lockfree
+go get github.com/structxz/lock-free
 ```
 
 ## Usage
@@ -25,7 +25,7 @@ go get github.com/yourusername/lockfree
 ### Importing the Package
 
 ```go
-import "github.com/yourusername/lockfree"
+import "github.com/structxz/lock-free"
 ```
 
 
@@ -36,7 +36,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/Egorekski/lockfree"
+	"github.com/structxz/lock-free"
 )
 
 func main() {

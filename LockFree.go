@@ -48,13 +48,13 @@ func (l *List) Print() {
 // TODO: Make finding by index (FindByIndex func)
 
 // Lock-free Stack
+type Stack struct {
+	top unsafe.Pointer
+}
+
 type StackNode struct {
 	value int          
 	next  unsafe.Pointer 
-}
-
-type Stack struct {
-	top unsafe.Pointer
 }
 
 func NewStack() *Stack {
@@ -95,14 +95,14 @@ func (s *Stack) Pop() (int, bool) {
 }
 
 // Lock-free Queue
-type QueueNode struct {
-    value int
-    next  unsafe.Pointer
+type Queue struct {
+	head unsafe.Pointer
+    tail unsafe.Pointer
 }
 
-type Queue struct {
-    head unsafe.Pointer
-    tail unsafe.Pointer
+type QueueNode struct {
+	value int
+	next  unsafe.Pointer
 }
 
 func NewQueue() *Queue {
